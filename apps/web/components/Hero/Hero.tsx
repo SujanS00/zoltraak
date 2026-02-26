@@ -8,6 +8,7 @@ import {
 } from "../Landing";
 import InsipiredLegends from "../InspiredLegends/InsipiredLegends";
 import Pricing from "../Pricing/Pricing";
+import ExamplesSection from "../examples/page";
 
 const metadata = {
   title: "MonoLab UI - A minimal layer for your codebase",
@@ -32,6 +33,7 @@ export function Hero() {
         <div className="relative z-10 bg-secondary/20 rounded-2xl">
           <HeroContent />
         </div>
+        {/* <ExamplesSection/> */}
         {/* Components Section */}
       <ComponentsSection />
       {/* How it Works / Features */}

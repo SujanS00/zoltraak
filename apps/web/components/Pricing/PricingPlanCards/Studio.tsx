@@ -7,9 +7,9 @@ const Studio = () => {
   const router = useRouter();
   const [showToast, setShowToast] = useState(false);
   const StudioPricingPlan: PricingPlanProps = {
-    pricingType: "Studio",
+    pricingType: "Enterprise Studio",
     pricingDescription: "Custom solutions for your startup or business",
-    price: 500,
+    price: 1500,
     monthOrYear: "project",
     features: [
   "Custom component development or full website builds",
@@ -25,7 +25,7 @@ const Studio = () => {
   const handleClick = () => {
     // setShowToast(true);
     // setTimeout()
-    router.push("https://cal.com/monolabui-dev-studio/30min")
+    router.push("https://cal.com/monolabuistudio/30min")
   };
 
   return (
