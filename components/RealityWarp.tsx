@@ -12,7 +12,7 @@ export function RealityWarp() {
   useEffect(() => {
     if (prev.current !== theme) {
       setActive(true);
-      const t = setTimeout(() => setActive(false), 550);
+      const t = setTimeout(() => setActive(false), 900);
       prev.current = theme;
       return () => clearTimeout(t);
     }
@@ -24,11 +24,11 @@ export function RealityWarp() {
         <motion.div
           key="warp"
           className="pointer-events-none fixed inset-0 z-50"
-          initial={{ opacity: 0, filter: "blur(0px)" }}
-          animate={{ opacity: 0.5, filter: "blur(6px)" }}
-          exit={{ opacity: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.5 }}
-          style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0.3), transparent 60%)" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8, ease: "easeInOut" }}
+          style={{ background: "var(--color-background)" }}
         />
       )}
     </AnimatePresence>

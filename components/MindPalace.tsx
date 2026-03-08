@@ -86,7 +86,7 @@ export function MindPalace() {
             exit={{ opacity: 0 }}
             className="p-6 rounded-2xl bg-primary/5 border border-primary/20 text-center"
           >
-            <p className="text-lg font-medium italic text-primary">"{activeMsg}"</p>
+            <p className="text-lg font-medium italic text-primary">{activeMsg}</p>
             {wellbeing.mood === "Awful" && (
                <motion.p 
                 animate={{ scale: [1, 1.1, 1] }} 

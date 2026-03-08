@@ -141,7 +141,7 @@ export const useAppStore = create<AppState>()(
 
       updateWellbeing: (mood) => set((state) => {
         const moodChanged = state.wellbeing.mood !== mood;
-        let { newXp, newLevel } = calculateLevelUp(
+        const { newXp, newLevel } = calculateLevelUp(
           state.player.xp + (moodChanged ? 5 : 0),
           state.player.level
         );

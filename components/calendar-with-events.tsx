@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,7 +47,7 @@ export function CalendarWithEvents() {
       {/* Calendar first, then Add Event and Events list (vertical flow on all screens) */}
       <div className="w-full overflow-x-auto md:overflow-visible">
         <div className="flex justify-center border-b border-border/10 pb-8 relative shrink-0">
-          <div className="min-w-[460px] md:min-w-0">
+          <div className="min-w-115 md:min-w-0">
             <DayPicker
               mode="single"
               selected={selectedDate}
@@ -71,12 +71,6 @@ export function CalendarWithEvents() {
                 today: "text-primary border border-primary/30",
                 outside: "opacity-10",
                 hidden: "invisible",
-              }}
-              components={{
-                Chevron: (props) => {
-                  if (props.orientation === 'left') return <ChevronLeft className="h-5 w-5" />;
-                  return <ChevronRight className="h-5 w-5" />;
-                }
               }}
             />
           </div>
@@ -140,7 +134,7 @@ export function CalendarWithEvents() {
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-[999]">
+        <div className="fixed inset-0 z-999">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setOpen(false)}

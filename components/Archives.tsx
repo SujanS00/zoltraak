@@ -21,9 +21,9 @@ export function Archives() {
   if (!mounted) return null;
 
   return (
-    <div className="flex md:h-[500px] w-full bg-card/40 border border-border/40 rounded-3xl shadow-2xl backdrop-blur-md overflow-x-auto md:overflow-hidden snap-x md:snap-none snap-mandatory">
+    <div className="flex md:h-125 w-full bg-card/40 border border-border/40 rounded-3xl shadow-2xl backdrop-blur-md overflow-x-auto md:overflow-hidden snap-x md:snap-none snap-mandatory">
       {/* SIDEBAR: Folder/Note List */}
-      <div className="md:w-64 flex-shrink-0 border-r border-border/20 bg-muted/10 p-4 flex flex-col gap-4 min-w-[85vw] md:min-w-0 snap-start md:snap-none">
+      <div className="md:w-64 shrink-0 border-r border-border/20 bg-muted/10 p-4 flex flex-col gap-4 min-w-[85vw] md:min-w-0 snap-start md:snap-none">
         <button 
           onClick={() => addNote('General')}
           className="flex items-center justify-center gap-2 w-full py-3 bg-primary/20 hover:bg-primary/30 border border-primary/40 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"

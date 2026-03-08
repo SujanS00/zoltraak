@@ -6,13 +6,14 @@ import { QuestLog } from "@/components/QuestLog";
 import { MindPalace } from "@/components/MindPalace";
 import { Archives } from "../components/Archives"; 
 import { CalendarWithEvents } from "@/components/calendar-with-events";
-import { FormButton } from "@repo/ui/form";
-import { Coins, Heart, BookOpen, Layout, Calendar as CalendarIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Coins, Heart, BookOpen, Layout, ChevronDown } from "lucide-react";
+import { SoulCoreHero } from "@/components/SoulCoreHero";
+import { useEffect, useState, useRef } from "react";
 
 export default function ZoltraakDashboard() {
-  const { currentTheme, cycleTheme, player, wellbeing } = useAppStore();
+  const { currentTheme, player, wellbeing } = useAppStore();
   const [mounted, setMounted] = useState(false);
+  const statsAnchorRef = useRef<HTMLDivElement | null>(null);
 
   // Prevents Hydration Mismatch
   useEffect(() => { 
@@ -29,14 +30,32 @@ export default function ZoltraakDashboard() {
       animate={{ filter: `brightness(${energyBrightness})` }}
       className="min-h-screen bg-background text-foreground"
     >
+      {/* Hero band (occupies most of the viewport to avoid UI flashing) */}
+      <section className="w-full flex flex-col items-center pt-4 pb-6 px-6 relative min-h-[90vh]">
+        <SoulCoreHero />
+        <div className="absolute bottom-14 md:bottom-16 right-6 md:right-12">
+          <motion.button
+            type="button"
+            onClick={() => statsAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            initial={{ opacity: 0, y: 0 }}
+            animate={{ opacity: 1, y: [0, 6, 0] }}
+            transition={{ delay: 1.5, duration: 1.2, repeat: Infinity }}
+            className="flex items-center justify-center rounded-full bg-background/90 backdrop-blur-md ring-1 ring-primary/40 shadow-[0_0_20px_var(--primary)] p-3 md:p-3.5"
+            aria-label="Scroll to Soul Core"
+          >
+            <ChevronDown className="h-5 w-5 text-primary" />
+          </motion.button>
+        </div>
+      </section>
+
+      {/* Stats and title are now in the section below the hero */}
       <motion.section
-        className="w-full flex flex-col items-center pt-10 pb-12 px-6"
-        initial="hidden"
-        animate="show"
-        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
+        className="w-full flex flex-col items-center pb-12 px-6 mt-6"
+        initial={{ opacity: 0, y: 6 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
       >
-        <div aria-hidden className="w-full max-w-3xl mx-auto min-h-6 sm:min-h-10 flex items-center justify-center" />
-        <motion.div variants={{ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }} className="text-center space-y-8">
+        <div id="soul-core" ref={statsAnchorRef} className="text-center space-y-6 mt-2 scroll-mt-24 sm:scroll-mt-28">
           <h1 className="text-5xl font-black tracking-tighter uppercase italic text-primary">Soul Core</h1>
           <div className="space-y-4">
             <div className="text-9xl font-black">{player.level}</div>
@@ -54,7 +73,7 @@ export default function ZoltraakDashboard() {
             </span>
             <span className="text-primary/60">{currentTheme} Reality</span>
           </div>
-        </motion.div>
+        </div>
       </motion.section>
 
       <motion.section className="w-full flex items-center justify-center bg-primary/5 py-16 px-6" initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }}>
