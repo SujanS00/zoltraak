@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
 import "../styles/multiverse.css";
+// IMPORTANT: This import is required for the calendar grid to align correctly
+import "react-day-picker/dist/style.css"; 
 import { ThemeProvider } from "@/components/theme-provider";
 import { MultiverseThemeSync } from "@/components/multiverse-theme-sync";
-// import { PostHogProvider } from "./providers";
 import { Analytics } from "@vercel/analytics/next";
-import { Navbar } from "@/components/Navbar";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -15,17 +15,9 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "MonoLab UI",
-  description: "A focused set of clean, accessible components that live in your codebase. Copy what you need, shape it to your product, and keep every line under your control.",
-  keywords: [
-    "monolab ui",
-    "react components",
-    "component library",
-    "ui components",
-    "design system",
-    "nextjs components",
-  ],
-  authors: [{ name: "MonoLab UI" }],
+  title: "Zoltraak | Multiverse Productivity",
+  description: "A gamified productivity OS with reality-warping themes.",
+  authors: [{ name: "Vyas" }],
 };
 
 export default function RootLayout({
@@ -34,18 +26,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" data-theme="zenith" suppressHydrationWarning>
-      <body>
+    <html lang="en" className={`${roboto.variable} dark`} data-theme="zenith" suppressHydrationWarning>
+      <body className={`${roboto.className} antialiased selection:bg-primary/30`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
+          {/* Synchronizes the Zustand theme to the HTML data-theme attribute */}
           <MultiverseThemeSync />
-          {/* <PostHogProvider>{children}</PostHogProvider> */}
-          <Navbar />
-          {children}
+          
+          {/* Navbar removed. Pages will now render full-screen starting from the top. */}
+          <main className="min-h-screen">
+            {children}
+          </main>
+          
           <Analytics />
         </ThemeProvider>
       </body>

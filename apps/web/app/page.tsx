@@ -1,171 +1,112 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Coins } from "lucide-react";
-import { FormButton, FormCard } from "@repo/ui/form";
+import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
+import { QuestLog } from "@/components/QuestLog";
+import { MindPalace } from "@/components/MindPalace";
+import { Archives } from "../components/Archives"; 
+import { CalendarWithEvents } from "@/components/calendar-with-events";
+import { FormButton } from "@repo/ui/form";
+import { Coins, Heart, BookOpen, Layout, Calendar as CalendarIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function ZoltraakDashboard() {
-  const { currentTheme, cycleTheme, player } = useAppStore();
-  const [showFlash, setShowFlash] = useState(false);
+  const { currentTheme, cycleTheme, player, wellbeing } = useAppStore();
+  const [mounted, setMounted] = useState(false);
 
-  console.log("Current Theme is:", currentTheme);
+  // Prevents Hydration Mismatch
+  useEffect(() => { 
+    setMounted(true); 
+  }, []);
 
-  useEffect(() => {
-    setShowFlash(true);
-    const t = setTimeout(() => setShowFlash(false), 320);
-    return () => clearTimeout(t);
-  }, [currentTheme]);
+  if (!mounted) return null;
 
-  const xpWidth = Math.max(0, Math.min(player.xp, 100));
+  // Visual Effect: Screen dims when energy is low
+  const energyBrightness = 0.6 + (wellbeing.energy / 250);
 
   return (
-    <div className="relative min-h-dvh w-full overflow-hidden bg-background px-4 py-8 md:px-6 md:py-10">
-      {/* Full-screen flash when theme changes */}
-      <AnimatePresence mode="wait">
-        {showFlash && (
-          <motion.div
-            key={`flash-${currentTheme}`}
-            className="pointer-events-none fixed inset-0 z-100 bg-white"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 1, 0] }}
-            transition={{ duration: 0.3, times: [0, 0.15, 1] }}
-            exit={{ opacity: 0 }}
-          />
-        )}
-      </AnimatePresence>
+    <motion.div 
+      animate={{ filter: `brightness(${energyBrightness})` }}
+      className="h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth hide-scrollbar bg-background text-foreground"
+    >
+      {/* SECTION 1: SOUL CORE */}
+      <section className="h-screen w-full snap-start flex flex-col items-center justify-center p-6 relative">
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="text-center space-y-8">
+          <h1 className="text-5xl font-black tracking-tighter uppercase italic text-primary">Soul Core</h1>
+          <div className="space-y-4">
+            <div className="text-9xl font-black">{player.level}</div>
+            <div className="text-xs uppercase tracking-[0.5em] text-muted-foreground">Current Level</div>
+            <div className="h-3 w-80 bg-muted rounded-full overflow-hidden border border-border/20 mx-auto shadow-inner">
+              <motion.div 
+                className="h-full bg-primary shadow-[0_0_15px_var(--primary)]" 
+                animate={{ width: `${player.xp}%` }} 
+              />
+            </div>
+          </div>
+          <div className="flex justify-center gap-8 text-sm font-bold uppercase tracking-widest">
+            <span className="flex items-center gap-2">
+              <Coins className="text-primary h-4 w-4"/> {player.gold} Gold
+            </span>
+            <span className="text-primary/60">{currentTheme} Reality</span>
+          </div>
+        </motion.div>
+      </section>
 
-      {/* Floating WARP REALITY button – uses MonoLab FormButton so it inherits design tokens */}
-      <motion.div
-        className="fixed bottom-6 right-6 z-50"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.98 }}
+      {/* SECTION 2: QUEST LEDGER */}
+      <section className="h-screen w-full snap-start flex items-center justify-center bg-primary/5 p-10">
+        <div className="max-w-4xl w-full space-y-8">
+           <div className="flex items-center gap-4">
+             <Layout className="h-8 w-8 text-primary" />
+             <h2 className="text-4xl font-bold uppercase italic">Quest Ledger</h2>
+           </div>
+           <QuestLog />
+        </div>
+      </section>
+
+      {/* SECTION 3: MIND PALACE */}
+      <section className="h-screen w-full snap-start flex items-center justify-center p-10 bg-background">
+        <div className="max-w-4xl w-full space-y-8 text-center">
+           <div className="flex items-center justify-center gap-4 mb-4">
+             <Heart className="h-8 w-8 text-red-500" />
+             <h2 className="text-4xl font-bold uppercase italic">Mind Palace</h2>
+           </div>
+           <MindPalace />
+        </div>
+      </section>
+
+      {/* SECTION 4: THE ARCHIVES */}
+      <section className="h-screen w-full snap-start flex items-center justify-center bg-muted/20 p-10">
+        <div className="max-w-5xl w-full space-y-8">
+          <div className="flex items-center gap-4">
+            <BookOpen className="h-8 w-8 text-primary" />
+            <h2 className="text-4xl font-bold uppercase italic">The Archives</h2>
+          </div>
+          <Archives />
+        </div>
+      </section>
+
+      {/* SECTION 5: CALENDAR SECTION - FULLY CAGED */}
+      <section className="h-dvh w-full snap-start flex items-center justify-center bg-background p-4 sm:p-10 overflow-hidden">
+        {/* The 85vh container traps the scrolling to JUST the calendar area */}
+        <div className="max-w-4xl w-full h-[85vh] overflow-y-auto overscroll-contain custom-scrollbar rounded-3xl pb-20">
+          <CalendarWithEvents />
+        </div>
+      </section>
+
+      {/* FIXED WARP BUTTON */}
+      <motion.div 
+        className="fixed bottom-10 right-10 z-50" 
+        whileHover={{ scale: 1.1 }} 
+        whileTap={{ scale: 0.9 }}
       >
-        <FormButton
-          type="button"
-          onClick={() => cycleTheme()}
-          className={cn(
-            "px-5 py-3 text-sm font-semibold shadow-[0_0_24px_var(--primary),0_0_48px_var(--primary)/40]",
-            "hover:shadow-[0_0_32px_var(--primary),0_0_64px_var(--primary)/50]"
-          )}
+        <FormButton 
+          type="button" 
+          onClick={() => cycleTheme()} 
+          className="rounded-full px-10 py-5 font-black uppercase tracking-tighter shadow-[0_0_40px_var(--primary)]"
         >
-          WARP REALITY
+          Warp Reality
         </FormButton>
       </motion.div>
-
-      {/* Bento Grid with scale pulse on theme change */}
-      <motion.div
-        key={currentTheme}
-        className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:grid-rows-[auto_auto_auto]"
-        initial={false}
-        animate={{
-          scale: showFlash ? [1, 1.02, 1] : 1,
-        }}
-        transition={{
-          duration: 0.35,
-          times: [0, 0.5, 1],
-        }}
-      >
-        {/* Row 0 */}
-        <BentoCell className="min-h-[120px] lg:min-h-[140px]">
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Reality
-          </span>
-          <span className="text-lg font-medium text-foreground">{currentTheme}</span>
-        </BentoCell>
-        <BentoCell colSpan={2} className="min-h-[120px] lg:min-h-[140px]" />
-        <BentoCell className="min-h-[120px] lg:min-h-[140px]">
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Dimension
-          </span>
-        </BentoCell>
-
-        {/* Row 1 – Soul Core (2x2) */}
-        <BentoCell className="min-h-[120px] lg:min-h-[140px]" />
-        <BentoCell
-          colSpan={2}
-          rowSpan={2}
-          className="flex min-h-[200px] flex-col p-6 lg:min-h-[280px]"
-        >
-          <FormCard className="flex h-full flex-col border-border/50 bg-card/80 backdrop-blur-sm">
-            <h2 className="mb-4 text-center text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Soul Core
-            </h2>
-            <div className="flex flex-1 flex-col items-center justify-center gap-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-foreground">Level {player.level}</div>
-                <p className="mt-1 text-xs text-muted-foreground">Current plane</p>
-              </div>
-              <div className="w-full max-w-[220px]">
-                <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                  <span>XP</span>
-                  <span>{player.xp}%</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <motion.div
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: "var(--primary)" }}
-                    initial={false}
-                    animate={{ width: `${xpWidth}%` }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 rounded-full border border-border/40 bg-muted/50 px-4 py-2">
-                <Coins className="h-4 w-4 text-primary" aria-hidden />
-                <span className="text-sm font-semibold text-foreground">{player.gold}</span>
-                <span className="text-xs text-muted-foreground">Gold</span>
-              </div>
-            </div>
-          </FormCard>
-        </BentoCell>
-        <BentoCell className="min-h-[120px] lg:min-h-[140px]" />
-
-        {/* Row 2 */}
-        <BentoCell className="min-h-[120px] lg:min-h-[140px]" />
-        <BentoCell className="min-h-[120px] lg:min-h-[140px]" />
-        <BentoCell className="min-h-[120px] lg:min-h-[140px]">
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Zoltraak
-          </span>
-        </BentoCell>
-
-        {/* Row 3 – extra row for abundance */}
-        <BentoCell className="min-h-[100px]" />
-        <BentoCell className="min-h-[100px]" />
-        <BentoCell colSpan={2} className="min-h-[100px]">
-          <span className="text-xs text-muted-foreground">
-            Use <strong className="text-foreground">WARP REALITY</strong> to shift dimensions.
-          </span>
-        </BentoCell>
-      </motion.div>
-    </div>
-  );
-}
-
-function BentoCell({
-  children,
-  className,
-  colSpan = 1,
-  rowSpan = 1,
-}: {
-  children?: React.ReactNode;
-  className?: string;
-  colSpan?: 1 | 2;
-  rowSpan?: 1 | 2;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-2xl border border-border/30 bg-muted/20 p-4 transition-colors hover:border-border/50 hover:bg-muted/30",
-        colSpan === 2 && "lg:col-span-2",
-        rowSpan === 2 && "lg:row-span-2",
-        className
-      )}
-    >
-      {children}
-    </div>
+    </motion.div>
   );
 }
