@@ -58,7 +58,7 @@ const themeMusicMap: Record<string, string[]> = {
 };
 
 const themeImageMap: Record<string, string> = {
-  zenith: "/images/zenith.png",
+  zenith: "/images/zenith.jpg",
   cyberpunk: "/images/cyberpunk.png",
   medieval: "/images/medieval.png",
   anime: "/images/anime.png",
