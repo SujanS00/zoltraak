@@ -13,7 +13,7 @@ const MOOD_DATA = {
     action: () => confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } })
   },
   "Good": { 
-    msg: "You're doing great, Nakama! Keep moving forward.", 
+    msg: "You're doing great! Keep moving forward.", 
     icon: Smile, 
     color: "text-green-400",
     action: () => confetti({ particleCount: 40, spread: 50 })

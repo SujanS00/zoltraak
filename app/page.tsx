@@ -64,6 +64,14 @@ const themeImageMap: Record<string, string> = {
   anime: "/images/anime.png",
 };
 
+// Exact `--primary` colors pulled directly from your CSS tokens
+const themeVisualizerColorMap: Record<string, string> = {
+  zenith: "#6f7bf8",               // Vivid primary from Zenith
+  cyberpunk: "oklch(0.7 0.25 325)", // Neon Magenta from Cyberpunk
+  medieval: "oklch(0.55 0.12 95)",  // Warm parchment/steel from Medieval
+  anime: "#f25c7a",                // Anime Pink
+};
+
 export default function ZoltraakDashboard() {
   const { currentTheme, player, wellbeing } = useAppStore();
   const [mounted, setMounted] = useState(false);
@@ -72,33 +80,117 @@ export default function ZoltraakDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("home"); 
 
+  // Audio & Visualizer Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationRef = useRef<number>(0);
 
-  // FIXED: Added "|| []" so TypeScript knows it is 100% an array
+  // Keep a ref of the theme so the animation loop always knows the active color
+  const currentThemeRef = useRef(currentTheme);
+  useEffect(() => {
+    currentThemeRef.current = currentTheme;
+  }, [currentTheme]);
+
   const activePlaylist = themeMusicMap[currentTheme] || themeMusicMap.zenith || [];
   const safeIndex = currentSongIndex < activePlaylist.length ? currentSongIndex : 0;
   const currentSongUrl = activePlaylist[safeIndex] || "";
 
   useEffect(() => {
     setMounted(true);
+    // Cleanup audio context on unmount to prevent memory leaks
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (audioContextRef.current) audioContextRef.current.close();
+    };
   }, []);
 
-  // Reset track to beginning when swapping realities
   useEffect(() => {
     setCurrentSongIndex(0);
   }, [currentTheme]);
 
-  // Flawless Play/Pause logic relying entirely on React state
+  // REAL-TIME AUDIO VISUALIZER LOGIC
+  const drawVisualizer = () => {
+    if (!analyserRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const analyser = analyserRef.current;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const draw = () => {
+      animationRef.current = requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArray);
+
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Takes only the first 45% of frequencies (perfect for Lofi/Bass)
+      const visibleBars = Math.floor(bufferLength * 0.45); 
+      
+      const barWidth = canvas.width / (visibleBars * 2.2); 
+      const gap = (canvas.width - (visibleBars * barWidth)) / Math.max(1, visibleBars - 1);
+      let x = 0;
+
+      const themeColor = themeVisualizerColorMap[currentThemeRef.current] || "#6f7bf8";
+
+      for (let i = 0; i < visibleBars; i++) {
+        const value = dataArray[i] ?? 0; 
+        const percent = value / 255;
+        
+        // Ensure a minimal flatline when silent
+        const barHeight = Math.max(percent * canvas.height * 0.9, 2 * window.devicePixelRatio); 
+
+        // Draw solid bars with exact theme colors
+        ctx.fillStyle = themeColor;
+        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+        x += barWidth + gap;
+      }
+    };
+    draw();
+  };
+
+  // INITIALIZE WEB AUDIO API
+  const initAudioContext = () => {
+    if (!audioRef.current || audioContextRef.current) return;
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioCtx = new AudioContextClass();
+      const analyser = audioCtx.createAnalyser();
+      
+      analyser.fftSize = 64; 
+      analyser.smoothingTimeConstant = 0.85; 
+
+      const source = audioCtx.createMediaElementSource(audioRef.current);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+
+      audioContextRef.current = audioCtx;
+      analyserRef.current = analyser;
+
+      drawVisualizer();
+    } catch (e) {
+      console.error("Audio Context initialization failed:", e);
+    }
+  };
+
+  // Flawless Play/Pause logic
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentSongUrl) return;
 
     if (isPlaying) {
+      if (audioContextRef.current?.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
       const playPromise = audio.play();
       if (playPromise !== undefined) {
-        playPromise.catch((e) => {
-          console.warn("Browser prevented playback:", e);
-        });
+        playPromise.catch((e) => console.warn("Browser prevented playback:", e));
       }
     } else {
       audio.pause();
@@ -106,20 +198,24 @@ export default function ZoltraakDashboard() {
   }, [isPlaying, currentSongUrl]); 
 
   const toggleMusic = () => {
+    initAudioContext();
     setIsPlaying((prev) => !prev);
   };
 
-  // FIXED: Added "|| []" fallback here too to silence TypeScript
   const handleNextSong = () => {
+    initAudioContext();
     const currentList = themeMusicMap[currentTheme] || themeMusicMap.zenith || [];
     if (currentList.length === 0) return;
     setCurrentSongIndex((prev) => (prev + 1) % currentList.length);
+    setIsPlaying(true);
   };
 
   const handlePrevSong = () => {
+    initAudioContext();
     const currentList = themeMusicMap[currentTheme] || themeMusicMap.zenith || [];
     if (currentList.length === 0) return;
     setCurrentSongIndex((prev) => (prev === 0 ? currentList.length - 1 : prev - 1));
+    setIsPlaying(true);
   };
 
   if (!mounted) return null;
@@ -138,51 +234,59 @@ export default function ZoltraakDashboard() {
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-x-hidden">
       
-      {/* React handles the src directly */}
       <audio 
         ref={audioRef} 
         src={currentSongUrl} 
         onEnded={handleNextSong} 
+        crossOrigin="anonymous" 
       />
 
-      {/* Hamburger Menu Button */}
+      {/* Hamburger Menu Button - Stayed at top-16 and left-4 */}
       <motion.button
         onClick={() => setIsSidebarOpen(true)}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="fixed top-6 left-6 z-[60] flex items-center justify-center p-3 rounded-full bg-background/80 backdrop-blur-md ring-1 ring-primary/40 shadow-[0_0_15px_var(--primary)] text-primary cursor-pointer"
+        className="fixed top-16 left-4 z-[60] flex items-center justify-center p-3 rounded-full bg-background/80 backdrop-blur-md ring-1 ring-primary/40 shadow-[0_0_15px_var(--primary)] text-primary cursor-pointer"
       >
         <Menu className="h-6 w-6" />
       </motion.button>
 
-      {/* COMPACT MUSIC PLAYER CARD (Top Right Corner) */}
-      <motion.div
-        className="fixed top-6 right-6 z-[60] flex items-center gap-2 p-2 rounded-full bg-background/80 backdrop-blur-md ring-1 ring-primary/40 shadow-[0_0_20px_var(--primary)] text-primary"
-      >
-        <button 
-          onClick={handlePrevSong}
-          className="p-2 hover:bg-primary/20 rounded-full transition-colors cursor-pointer"
-          aria-label="Previous Song"
-        >
-          <SkipBack className="h-4 w-4" />
-        </button>
+      {/* COMPACT MUSIC PLAYER & VISUALIZER (Bottom Right Corner) */}
+      <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-center w-[180px]">
+        
+        {/* Real Audio Visualizer Canvas - Height reduced to h-8 */}
+        <canvas 
+          ref={canvasRef}
+          className="w-[70%] h-8 pointer-events-none z-0 mb-[-1px]"
+        />
 
-        <button 
-          onClick={toggleMusic}
-          className="p-3 bg-primary/10 hover:bg-primary/30 rounded-full transition-colors cursor-pointer shadow-inner"
-          aria-label="Toggle Music"
-        >
-          {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-        </button>
+        {/* Music Player Controls */}
+        <motion.div className="w-full flex justify-between items-center p-2 rounded-full bg-background/80 backdrop-blur-md ring-1 ring-primary/40 shadow-[0_0_20px_var(--primary)] text-primary z-10 relative">
+          <button 
+            onClick={handlePrevSong}
+            className="p-2 hover:bg-primary/20 rounded-full transition-colors cursor-pointer"
+            aria-label="Previous Song"
+          >
+            <SkipBack className="h-4 w-4" />
+          </button>
 
-        <button 
-          onClick={handleNextSong}
-          className="p-2 hover:bg-primary/20 rounded-full transition-colors cursor-pointer"
-          aria-label="Next Song"
-        >
-          <SkipForward className="h-4 w-4" />
-        </button>
-      </motion.div>
+          <button 
+            onClick={toggleMusic}
+            className="p-3 bg-primary/10 hover:bg-primary/30 rounded-full transition-colors cursor-pointer shadow-inner"
+            aria-label="Toggle Music"
+          >
+            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+          </button>
+
+          <button 
+            onClick={handleNextSong}
+            className="p-2 hover:bg-primary/20 rounded-full transition-colors cursor-pointer"
+            aria-label="Next Song"
+          >
+            <SkipForward className="h-4 w-4" />
+          </button>
+        </motion.div>
+      </div>
 
       {/* Sidebar Overlay (Mobile & Desktop) */}
       <AnimatePresence>
@@ -265,6 +369,15 @@ export default function ZoltraakDashboard() {
         animate={{ filter: `brightness(${energyBrightness})` }}
         className="relative z-10 w-full flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6"
       >
+        
+        {/* Pomodoro Timer (Kept outside AnimatePresence so it never resets) */}
+        <div 
+          style={{ display: activeTab === "home" ? "flex" : "none" }} 
+          className="w-full flex-col items-center justify-center mb-10"
+        >
+          <PomodoroTimer />
+        </div>
+
         <AnimatePresence mode="wait">
           {activeTab === "home" && (
             <motion.div
@@ -274,7 +387,6 @@ export default function ZoltraakDashboard() {
               exit={{ opacity: 0, y: -20 }}
               className="w-full flex flex-col items-center justify-center gap-10"
             >
-              <PomodoroTimer />
               <SoulCoreHero />
               
               <div className="text-center space-y-6 bg-background/70 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] border border-border/20 shadow-2xl w-full max-w-2xl">
